@@ -64,5 +64,5 @@ orbital_up = ['s', 'p1', 'p2', 'p3']
 orbital_down = ['s', 'd1', 'd2', 'd3', 'd4', 'd5']
 atom_no_up = ['C1', 'O2', 'N3']
 atom_no_down = ['H1', 'H2', 'H3', 'H4']
-
-print(create_label(orbital_up, orbital_down, atom_no_up, atom_no_down))
+lbl = CreateLabel()
+print(lbl.create_label(orbital_up, orbital_down, atom_no_up, atom_no_down))

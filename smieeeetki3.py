@@ -23,6 +23,7 @@ class VaspData():
         self.atoms_symb_and_num = poscar.symbol_and_number()
         self.number_of_atoms = poscar.number_of_atoms()
         self.list_atomic_symbols = poscar.list_atomic_symbols()
+        self.atomic_symbols = poscar.atomic_symbols()
 
 
 class PlotWidget(QWidget):
@@ -163,9 +164,13 @@ class MainWindow(QMainWindow):
 
         param_tree_layout.addWidget(self.scroll_area_widget)
 
-        btn_group_layout = QHBoxLayout()
+        all_btn_layout = QVBoxLayout()
+        btn_orb_layout = QHBoxLayout()
+        btn_atoms_layout = QHBoxLayout()
+        all_btn_layout.addLayout(btn_orb_layout)
+        all_btn_layout.addLayout(btn_atoms_layout)
 
-        # Select buttons
+        ####################### Select ORBITALS buttons#################################################
         select_layout = QVBoxLayout()
         for i, orbital_list in enumerate(self.orbital_types):
             orb_letter = orbital_list[0] if len(orbital_list) == 1 else orbital_list[0][0]
@@ -177,7 +182,7 @@ class MainWindow(QMainWindow):
         select_all_btn.clicked.connect(self.select_all_orbitals)
         select_layout.addWidget(select_all_btn)
 
-        btn_group_layout.addLayout(select_layout)
+        btn_orb_layout.addLayout(select_layout)
 
         # Deselect buttons
         deselect_layout = QVBoxLayout()
@@ -191,8 +196,36 @@ class MainWindow(QMainWindow):
         deselect_all_btn.clicked.connect(self.deselect_all_orbitals)
         deselect_layout.addWidget(deselect_all_btn)
 
-        btn_group_layout.addLayout(deselect_layout)
-        self.scroll_area_layout.addLayout(btn_group_layout)
+        btn_orb_layout.addLayout(deselect_layout)
+
+        ############################################ ATOMS ##########################################
+        select_atom_layout = QVBoxLayout()
+        deselect_atom_layout = QVBoxLayout()
+
+        for i, atom_list in enumerate(self.atomic_symbols):
+            atom_letter = atom_list
+            btn = QPushButton(f"select {atom_letter}", self)
+            btn.clicked.connect(lambda _, x=i: self.select_atom(x))
+            select_atom_layout.addWidget(btn)
+
+        select_all_atoms_btn = QPushButton("Select all", self)
+        select_all_atoms_btn.clicked.connect(self.select_all_atoms)
+        select_atom_layout.addWidget(select_all_atoms_btn)
+
+        for i, atom_list in enumerate(self.atomic_symbols):
+            atom_letter = atom_list
+            btn = QPushButton(f"Deselect {atom_letter}", self)
+            btn.clicked.connect(lambda _, x=i: self.deselect_atom(x))
+            deselect_atom_layout.addWidget(btn)
+
+        deselect_all_atoms_btn = QPushButton("Deselect all", self)
+        deselect_all_atoms_btn.clicked.connect(self.deselect_all_atoms)
+        deselect_atom_layout.addWidget(deselect_all_atoms_btn)
+
+
+        btn_atoms_layout.addLayout(select_atom_layout)
+        btn_atoms_layout.addLayout(deselect_atom_layout)
+        self.scroll_area_layout.addLayout(all_btn_layout)
 
 
 
@@ -209,6 +242,18 @@ class MainWindow(QMainWindow):
         self.console.setFixedHeight(200)
         main_layout.addWidget(self.console)
 
+    def select_atom(self, index):
+        print('selecting')
+        pass
+
+    def deselect_atom(self, index):
+        pass
+
+    def select_all_atoms(self):
+        pass
+
+    def deselect_all_atoms(self):
+        pass
 
     def select_orbital(self, index):
         self.update_checkboxes(self.orb_types[index], True)
@@ -239,8 +284,9 @@ class MainWindow(QMainWindow):
             checkbox.blockSignals(False)
         # Update orbital_up once after all changes
         self.checkbox_changed()
+
     def print_to_console(self, message):
-        self.console.appendPlainText(">>>"+message)
+        self.console.appendPlainText(">>> "+message)
 
     def parameter_changed(self, param, changes):
         for param, change, data in changes:
@@ -251,11 +297,12 @@ class MainWindow(QMainWindow):
         self.update_indexes()
         self.update_plot()
         self.orbital_up = [checkbox.text() for checkbox in self.orbital_checkboxes if checkbox.isChecked()]
-        print(f"Checkboxes changed: {self.orbital_up}")
+        self.atoms_up = [checkbox for checkbox in self.atom_checkboxes if checkbox.isChecked()]
 
     def update_indexes(self):
         self.selected_atoms = [i for i, cb in enumerate(self.atom_checkboxes) if cb.isChecked()]
         self.selected_orbitals = [i for i, cb in enumerate(self.orbital_checkboxes) if cb.isChecked()]
+
     def update_plot(self):
         selected_indices = [i for i, cb in enumerate(self.atom_checkboxes) if cb.isChecked()]
         middle_idx = self.param.param('Middle Index').value()
@@ -265,7 +312,7 @@ class MainWindow(QMainWindow):
         self.clear_plot_data(self.bounded_plot)
 
         # plot dataset up
-        colors = ['b', 'r', 'g', 'c', 'm', 'y', 'k']  # Add more colors if needed
+        colors = ['b', 'r', 'g', 'c', 'm', 'y', 'k','b', 'r', 'g', 'c', 'm', 'y', 'k']  # Add more colors if needed
         for atom_index in self.selected_atoms:
             for orbital_index in self.selected_orbitals:
                 plot_color = colors[orbital_index]  # Cycle through colors
@@ -298,9 +345,9 @@ class MainWindow(QMainWindow):
         self.region.setRegion(view_range)
 
     def create_data(self):
-        #self.data = VaspData("D:\\OneDrive - Uniwersytet Jagielloński\\modelowanie DFT\\CeO2\\CeO2_bulk\\Ceria_bulk_vacancy\\0.Ceria_bulk_1vacancy\\scale_0.98")
+        self.data = VaspData("D:\\OneDrive - Uniwersytet Jagielloński\\modelowanie DFT\\CeO2\\CeO2_bulk\\Ceria_bulk_vacancy\\0.Ceria_bulk_1vacancy\\scale_0.98")
         #self.data = VaspData("D:\\OneDrive - Uniwersytet Jagielloński\\modelowanie DFT\\czasteczki\\O2")
-        self.data = VaspData("D:\\OneDrive - Uniwersytet Jagielloński\\modelowanie DFT\\co3o4_new_new\\2.ROS\\1.large_slab\\1.old_random_mag\\6.CoO-O_CoO-O\\antiferro\\HSE\\DOS_new")
+        #self.data = VaspData("D:\\OneDrive - Uniwersytet Jagielloński\\modelowanie DFT\\co3o4_new_new\\2.ROS\\1.large_slab\\1.old_random_mag\\6.CoO-O_CoO-O\\antiferro\\HSE\\DOS_new")
         self.dataset_down = self.data.data_down
         self.dataset_up = self.data.data_up
         self.number_of_atoms = self.data.number_of_atoms
@@ -309,6 +356,17 @@ class MainWindow(QMainWindow):
         self.atoms_symb_and_num = self.data.atoms_symb_and_num
         self.e_fermi = self.data.e_fermi
         self.list_atomic_symbols = self.data.list_atomic_symbols
+        self.atomic_symbols = self.data.atomic_symbols
+
+        self.partitioned_lists = [[] for _ in range(len(self.atomic_symbols))]
+
+        # Partition the original list
+        for item in self.atoms_symb_and_num:
+            for i, atom in enumerate(self.atomic_symbols):
+                if item.startswith(atom):
+                    self.partitioned_lists[i].append(item)
+                    break  # Once found, no need to continue checking other atoms
+
 
 def main():
     app = QApplication(sys.argv)
