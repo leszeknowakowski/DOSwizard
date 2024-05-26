@@ -235,6 +235,7 @@ def main():
     print('# Welcome to DOSwizard! This is very experimental! #')
     print('#            use at your own risk.                 #')
     print('####################################################')
+    print('####################################################')
     app = QApplication(sys.argv)
     mainWin = MainWindow()
     mainWin.show()
