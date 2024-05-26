@@ -1,11 +1,12 @@
 import sys
 import numpy as np
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QCheckBox, QLabel,
-                             QScrollArea, QFrame, QTabWidget, QSplitter, QSizePolicy)
+                             QScrollArea, QFrame, QTabWidget, QSplitter,QPlainTextEdit, QPushButton)
 from PyQt5 import QtCore
 import pyqtgraph as pg
 from pyqtgraph.parametertree import Parameter, ParameterTree
 from VASPparser import *
+
 
 pg.setConfigOptions(antialias=True)
 
@@ -15,11 +16,13 @@ class VaspData():
         self.data_up = self.doscar.dataset_up
         self.data_down = self.doscar.dataset_down
         self.orbitals = self.doscar.orbitals
+        self.orbital_types = self.doscar.orbital_types
         self.e_fermi = self.doscar.efermi
 
         poscar = PoscarParser(os.path.join(dir, "POSCAR"))
         self.atoms_symb_and_num = poscar.symbol_and_number()
         self.number_of_atoms = poscar.number_of_atoms()
+        self.list_atomic_symbols = poscar.list_atomic_symbols()
 
 
 class PlotWidget(QWidget):
@@ -43,6 +46,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.create_data()
         self.initUI()
+        self.orb_types = [["s"], ["py", "pz", "px"], ["dxy", "dyz", "dz", "dxz", "dx2y2"],
+                          ["fy(3x2-y2)", "fxyz", "fyz2", "fz3", "fxz2", "fz(x2-y2)", "fx(x2-3y2)"]]
 
     def initUI(self):
         self.setWindowTitle('DOSWave v.0.0.0')
@@ -111,11 +116,12 @@ class MainWindow(QMainWindow):
         self.param.sigTreeStateChanged.connect(self.parameter_changed)
         param_tree_layout.addWidget(self.param_tree)
 
+        ######################################################## tab 2 - orbital selector ###########################
         # Create QHBoxLayout for checkboxes
         self.scroll_area_widget = QWidget()
         self.scroll_area_layout = QHBoxLayout(self.scroll_area_widget)
 
-        # Left side of the scroll area for checkboxes
+        # Left side of the scroll area for atoms
         self.checkboxes_widget = QWidget()
         self.checkboxes_layout = QVBoxLayout(self.checkboxes_widget)
         self.checkboxes_layout.setAlignment(QtCore.Qt.AlignTop)
@@ -135,7 +141,7 @@ class MainWindow(QMainWindow):
             self.atom_checkboxes.append(checkbox)
             self.checkboxes_layout.addWidget(checkbox)
 
-        # Right side for other content
+        # Right side for orbitals
         self.scroll_right_widget = QWidget()
         self.scroll_right_layout = QVBoxLayout(self.scroll_right_widget)
         self.scroll_right_layout.setAlignment(QtCore.Qt.AlignTop)
@@ -157,6 +163,40 @@ class MainWindow(QMainWindow):
 
         param_tree_layout.addWidget(self.scroll_area_widget)
 
+        btn_group_layout = QHBoxLayout()
+
+        # Select buttons
+        select_layout = QVBoxLayout()
+        for i, orbital_list in enumerate(self.orbital_types):
+            orb_letter = orbital_list[0] if len(orbital_list) == 1 else orbital_list[0][0]
+            btn = QPushButton(f"select {orb_letter}", self)
+            btn.clicked.connect(lambda _, x=i: self.select_orbital(x))
+            select_layout.addWidget(btn)
+
+        select_all_btn = QPushButton("select all", self)
+        select_all_btn.clicked.connect(self.select_all_orbitals)
+        select_layout.addWidget(select_all_btn)
+
+        btn_group_layout.addLayout(select_layout)
+
+        # Deselect buttons
+        deselect_layout = QVBoxLayout()
+        for i, orbital_list in enumerate(self.orbital_types):
+            orb_letter = orbital_list[0] if len(orbital_list) == 1 else orbital_list[0][0]
+            btn = QPushButton(f"deselect {orb_letter}", self)
+            btn.clicked.connect(lambda _, x=i: self.deselect_orbital(x))
+            deselect_layout.addWidget(btn)
+
+        deselect_all_btn = QPushButton("Deselect all", self)
+        deselect_all_btn.clicked.connect(self.deselect_all_orbitals)
+        deselect_layout.addWidget(deselect_all_btn)
+
+        btn_group_layout.addLayout(deselect_layout)
+        self.scroll_area_layout.addLayout(btn_group_layout)
+
+
+
+        ###################################### tab 3 - atom selection ##################################################
         empty_widget = QWidget()  # An empty tab
 
         right_tab_widget.addTab(param_tree_widget, "Parameters")
@@ -164,7 +204,43 @@ class MainWindow(QMainWindow):
         right_tab_widget.addTab(empty_widget, "Structure list")
         splitter.addWidget(right_tab_widget)
 
+        self.console = QPlainTextEdit()
+        self.console.setReadOnly(True)
+        self.console.setFixedHeight(200)
+        main_layout.addWidget(self.console)
 
+
+    def select_orbital(self, index):
+        self.update_checkboxes(self.orb_types[index], True)
+        print(f"Selected: {self.orbital_up}")
+
+
+    def deselect_orbital(self, index):
+        self.update_checkboxes(self.orb_types[index], False)
+        print(f"Deselected: {self.orbital_up}")
+
+    def select_all_orbitals(self):
+        all_orbitals = [orb for sublist in self.orb_types for orb in sublist]
+        self.update_checkboxes(all_orbitals, True)
+        print(f"Selected All: {self.orbital_up}")
+
+    def deselect_all_orbitals(self):
+        self.update_checkboxes([], False)
+        print("Deselected All")
+
+    def update_checkboxes(self, orbitals, check):
+        # Block signals to avoid multiple updates
+        for checkbox in self.orbital_checkboxes:
+            checkbox.blockSignals(True)
+            if checkbox.text() in orbitals:
+                checkbox.setChecked(check)
+            elif not check:
+                checkbox.setChecked(False)
+            checkbox.blockSignals(False)
+        # Update orbital_up once after all changes
+        self.checkbox_changed()
+    def print_to_console(self, message):
+        self.console.appendPlainText(">>>"+message)
 
     def parameter_changed(self, param, changes):
         for param, change, data in changes:
@@ -174,7 +250,8 @@ class MainWindow(QMainWindow):
     def checkbox_changed(self):
         self.update_indexes()
         self.update_plot()
-
+        self.orbital_up = [checkbox.text() for checkbox in self.orbital_checkboxes if checkbox.isChecked()]
+        print(f"Checkboxes changed: {self.orbital_up}")
 
     def update_indexes(self):
         self.selected_atoms = [i for i, cb in enumerate(self.atom_checkboxes) if cb.isChecked()]
@@ -189,22 +266,23 @@ class MainWindow(QMainWindow):
 
         # plot dataset up
         colors = ['b', 'r', 'g', 'c', 'm', 'y', 'k']  # Add more colors if needed
-        for atom_color, atom_index in enumerate(self.selected_atoms):
-            for orbital_color, orbital_index in enumerate(self.selected_orbitals):
-                plot_color = colors[orbital_color % len(colors)]  # Cycle through colors
+        for atom_index in self.selected_atoms:
+            for orbital_index in self.selected_orbitals:
+                plot_color = colors[orbital_index]  # Cycle through colors
                 plot_data = self.dataset_up[atom_index][orbital_index]
                 self.full_range_plot.plot(plot_data, self.data.doscar.total_dos_energy, pen=pg.mkPen(plot_color))
                 self.bounded_plot.plot(plot_data, self.data.doscar.total_dos_energy, pen=pg.mkPen(plot_color))
 
         # plot dataset down
-        for atom_color, atom_index in enumerate(self.selected_atoms):
-            for orbital_color, orbital_index in enumerate(self.selected_orbitals):
-                plot_color = colors[orbital_color % len(colors)]  # Cycle through colors
-                plot_data = self.dataset_down[atom_index][atom_color]
+        for atom_index in self.selected_atoms:
+            for orbital_index in self.selected_orbitals:
+                plot_color = colors[orbital_index]  # Cycle through colors
+                plot_data = self.dataset_down[atom_index][orbital_index]
                 self.full_range_plot.plot([-x for x in plot_data], self.data.doscar.total_dos_energy, pen=pg.mkPen(plot_color))
                 self.bounded_plot.plot([-x for x in plot_data], self.data.doscar.total_dos_energy, pen=pg.mkPen(plot_color))
 
-        self.update_bounded_plot_y_range()  # Initial update for the bounded plot
+        self.update_bounded_plot_y_range()
+        self.print_to_console(f'added {self.selected_atoms} {self.selected_orbitals}')
 
     def clear_plot_data(self, plot_widget):
         items = [item for item in plot_widget.listDataItems() if isinstance(item, pg.PlotDataItem)]
@@ -221,23 +299,22 @@ class MainWindow(QMainWindow):
 
     def create_data(self):
         #self.data = VaspData("D:\\OneDrive - Uniwersytet Jagielloński\\modelowanie DFT\\CeO2\\CeO2_bulk\\Ceria_bulk_vacancy\\0.Ceria_bulk_1vacancy\\scale_0.98")
-        self.data = VaspData("D:\\OneDrive - Uniwersytet Jagielloński\\modelowanie DFT\\czasteczki\\O2")
-        #self.data = VaspData("D:\\OneDrive - Uniwersytet Jagielloński\\modelowanie DFT\\co3o4_new_new\\2.ROS\\1.large_slab\\1.old_random_mag\\6.CoO-O_CoO-O\\antiferro\\HSE\\DOS_new")
+        #self.data = VaspData("D:\\OneDrive - Uniwersytet Jagielloński\\modelowanie DFT\\czasteczki\\O2")
+        self.data = VaspData("D:\\OneDrive - Uniwersytet Jagielloński\\modelowanie DFT\\co3o4_new_new\\2.ROS\\1.large_slab\\1.old_random_mag\\6.CoO-O_CoO-O\\antiferro\\HSE\\DOS_new")
         self.dataset_down = self.data.data_down
         self.dataset_up = self.data.data_up
         self.number_of_atoms = self.data.number_of_atoms
         self.orbitals = self.data.orbitals
+        self.orbital_types = self.data.orbital_types
         self.atoms_symb_and_num = self.data.atoms_symb_and_num
         self.e_fermi = self.data.e_fermi
+        self.list_atomic_symbols = self.data.list_atomic_symbols
 
 def main():
-    print('####################################################')
-    print('# Welcome to DOSwizard! This is very experimental! #')
-    print('#            use at your own risk.                 #')
-    print('####################################################')
-    print('####################################################')
     app = QApplication(sys.argv)
     mainWin = MainWindow()
+    mainWin.print_to_console(' Welcome to DOSwizard! This is very experimental! ')
+    mainWin.print_to_console('            use at your own risk.                 ')
     mainWin.show()
     sys.exit(app.exec_())
 

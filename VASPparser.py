@@ -256,16 +256,21 @@ class DOSCARparser:
             if len(self.dos_parts[0][0]) == 18:
                 self.element_block = 'd'
                 self.orbitals = ["s", "py", "pz", "px", "dxy", "dyz", "dz", "dxz", "dx2y2"]
+                self.orbital_types = [["s"], ["py", "pz", "px"], ["dxy", "dyz", "dz", "dxz", "dx2y2"]]
             elif len(self.dos_parts[0][0]) == 8:
                 self.element_block = 'p'
                 self.orbitals = ["s", "py", "pz", "px"]
+                self.orbital_types =[["s"], ["py", "pz", "px"]]
             elif len(self.dos_parts[0][0]) == 32:
                 self.element_block = 'f'
                 self.orbitals = ["s", "py", "pz", "px", "dxy", "dyz", "dz", "dxz", "dx2y2", "fy(3x2-y2)", "fxyz", "fyz2",
                             "fz3", "fxz2", "fz(x2-y2)", "fx(x2-3y2)"]
+                self.orbital_types =[["s"], ["py", "pz", "px"], ["dxy", "dyz", "dz", "dxz", "dx2y2"], ["fy(3x2-y2)", "fxyz", "fyz2",
+                            "fz3", "fxz2", "fz(x2-y2)", "fx(x2-3y2)"]]
             elif len(self.dos_parts[0][0]) == 2:
                 self.element_block = 's'
                 self.orbitals = ["s"]
+                self.orbital_types = [["s"]]
             else:
                 '''raise error'''
                 pass
