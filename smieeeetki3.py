@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QCheckBox, QLabel,
-                             QScrollArea, QFrame, QTabWidget, QSplitter,QPlainTextEdit, QPushButton)
+                             QScrollArea, QFrame, QTabWidget, QSplitter,QPlainTextEdit, QPushButton, QGridLayout)
 from PyQt5 import QtCore
 import pyqtgraph as pg
 from pyqtgraph.parametertree import Parameter, ParameterTree
@@ -226,7 +226,22 @@ class MainWindow(QMainWindow):
         btn_atoms_layout.addLayout(select_atom_layout)
         btn_atoms_layout.addLayout(deselect_atom_layout)
         self.scroll_area_layout.addLayout(all_btn_layout)
+        ########################################## additional buttons ##################################################
+        self.additional_button_layout  = QGridLayout()
+        self.color_button = pg.ColorButton()
+        self.color_button.setColor('r')
+        self.additional_button_layout.addWidget(self.color_button, 0, 0,)
 
+        self.plot_merged_btn = QPushButton("Plot merged", self)
+        self.additional_button_layout.addWidget(self.plot_merged_btn, 0, 1)
+        self.plot_merged_btn.clicked.connect(self.plot_merged)
+
+        self.full_range_plot.plot([1,2,3,4,5,6,7,8,9,10], pen = pg.mkPen(self.color_button.color()))
+
+
+
+
+        all_btn_layout.addLayout(self.additional_button_layout)
 
 
         ###################################### tab 3 - atom selection ##################################################
@@ -245,7 +260,6 @@ class MainWindow(QMainWindow):
     def select_atom(self, index):
         self.update_atom_checkboxes(self.partitioned_lists[index], True)
 
-
     def deselect_atom(self, index):
         self.update_atom_checkboxes(self.partitioned_lists[index], False)
 
@@ -259,7 +273,6 @@ class MainWindow(QMainWindow):
         self.update_checkboxes(self.orb_types[index], True)
         print(f"Selected: {self.orbital_up}")
 
-
     def deselect_orbital(self, index):
         self.update_checkboxes(self.orb_types[index], False)
         print(f"Deselected: {self.orbital_up}")
@@ -270,7 +283,8 @@ class MainWindow(QMainWindow):
         print(f"Selected All: {self.orbital_up}")
 
     def deselect_all_orbitals(self):
-        self.update_checkboxes([], False)
+        all_orbitals = [orb for sublist in self.orb_types for orb in sublist]
+        self.update_checkboxes(all_orbitals, False)
         print("Deselected All")
 
     def update_checkboxes(self, orbitals, check):
@@ -288,8 +302,6 @@ class MainWindow(QMainWindow):
             checkbox.blockSignals(True)
             if checkbox.text() in atom:
                 checkbox.setChecked(check)
-            elif not check:
-                checkbox.setChecked(False)
             checkbox.blockSignals(False)
         self.checkbox_changed()
 
@@ -310,6 +322,30 @@ class MainWindow(QMainWindow):
     def update_indexes(self):
         self.selected_atoms = [i for i, cb in enumerate(self.atom_checkboxes) if cb.isChecked()]
         self.selected_orbitals = [i for i, cb in enumerate(self.orbital_checkboxes) if cb.isChecked()]
+
+    def plot_merged(self):
+        '''
+        print('starting')
+        all_data = []
+        for atom in self.selected_atoms:
+            for oribtal in self.selected_orbitals:
+                all_data.append(self.dataset_up[atom, oribtal])
+        print()
+        data_up   =   self.dataset_up[self.selected_atoms][self.selected_orbitals]
+        data_down = self.dataset_down[self.selected_atoms][self.selected_orbitals]
+        plot_color = self.color_button.color()
+
+        self.clear_plot_data(self.full_range_plot)
+        self.clear_plot_data(self.bounded_plot)
+
+        #self.full_range_plot.plot(data_up, self.data.doscar.total_dos_energy, pen=pg.mkPen(plot_color))
+        #self.bounded_plot.plot(data_up, self.data.doscar.total_dos_energy, pen=pg.mkPen(plot_color))
+
+        #self.full_range_plot.plot(plot_data, self.data.doscar.total_dos_energy, pen=pg.mkPen(plot_color))
+        #self.bounded_plot.plot(plot_data, self.data.doscar.total_dos_energy, pen=pg.mkPen(plot_color))
+        '''
+        pass
+
 
     def update_plot(self):
         selected_indices = [i for i, cb in enumerate(self.atom_checkboxes) if cb.isChecked()]
