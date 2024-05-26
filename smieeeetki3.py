@@ -243,17 +243,17 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self.console)
 
     def select_atom(self, index):
-        print('selecting')
-        pass
+        self.update_atom_checkboxes(self.partitioned_lists[index], True)
+
 
     def deselect_atom(self, index):
-        pass
+        self.update_atom_checkboxes(self.partitioned_lists[index], False)
 
     def select_all_atoms(self):
-        pass
+        self.update_atom_checkboxes(self.atoms_symb_and_num, True)
 
     def deselect_all_atoms(self):
-        pass
+        self.update_atom_checkboxes(self.atoms_symb_and_num, False)
 
     def select_orbital(self, index):
         self.update_checkboxes(self.orb_types[index], True)
@@ -279,10 +279,18 @@ class MainWindow(QMainWindow):
             checkbox.blockSignals(True)
             if checkbox.text() in orbitals:
                 checkbox.setChecked(check)
+            checkbox.blockSignals(False)
+        # Update orbital_up once after all changes
+        self.checkbox_changed()
+
+    def update_atom_checkboxes(self, atom, check):
+        for checkbox in self.atom_checkboxes:
+            checkbox.blockSignals(True)
+            if checkbox.text() in atom:
+                checkbox.setChecked(check)
             elif not check:
                 checkbox.setChecked(False)
             checkbox.blockSignals(False)
-        # Update orbital_up once after all changes
         self.checkbox_changed()
 
     def print_to_console(self, message):
@@ -312,7 +320,7 @@ class MainWindow(QMainWindow):
         self.clear_plot_data(self.bounded_plot)
 
         # plot dataset up
-        colors = ['b', 'r', 'g', 'c', 'm', 'y', 'k','b', 'r', 'g', 'c', 'm', 'y', 'k']  # Add more colors if needed
+        colors = ['b', 'r', 'g', 'c', 'm', 'y', 'k','b', 'r', 'g', 'c', 'm', 'y', 'k','b', 'r', 'g', 'c', 'm', 'y', 'k']  # Add more colors if needed
         for atom_index in self.selected_atoms:
             for orbital_index in self.selected_orbitals:
                 plot_color = colors[orbital_index]  # Cycle through colors
