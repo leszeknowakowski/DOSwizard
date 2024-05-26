@@ -233,7 +233,7 @@ class MainWindow(QMainWindow):
 def main():
     print('####################################################')
     print('# Welcome to DOSwizard! This is very experimental! #')
-    print('# use at your own risk.                            #')
+    print('#            use at your own risk.                 #')
     print('####################################################')
     app = QApplication(sys.argv)
     mainWin = MainWindow()
