@@ -105,7 +105,8 @@ class MainWindow(QMainWindow):
 
         self.full_range_plot.addItem(self.inf_line_full)
         self.bounded_plot.addItem(self.inf_line_bounded)
-        splitter.setSizes([1, 1])
+        splitter.setStretchFactor(0, 3)
+        splitter.setStretchFactor(1,3)
 
         # Right tabs for GUI
         right_tab_widget = QTabWidget()
@@ -260,7 +261,7 @@ class MainWindow(QMainWindow):
 
         self.console = QPlainTextEdit()
         self.console.setReadOnly(True)
-        self.console.setFixedHeight(200)
+        self.console.setFixedHeight(100)
         main_layout.addWidget(self.console)
 
     def select_atom(self, index):
@@ -407,7 +408,7 @@ class MainWindow(QMainWindow):
         if platform.system() == 'Linux':
             file = './'
         elif platform.system() == 'Windows':
-            file = "D:\\OneDrive - Uniwersytet Jagielloński\\modelowanie DFT\\CeO2\\CeO2_bulk\\Ceria_bulk_vacancy\\0.Ceria_bulk_1vacancy\\scale_0.98"
+            file = "F:\\syncme\\modelowanie DFT\\CeO2\\CeO2_bulk\\Ceria_bulk_vacancy\\0.Ceria_bulk_1vacancy\\scale_0.98"
             #self.data = VaspData("D:\\OneDrive - Uniwersytet Jagielloński\\modelowanie DFT\\czasteczki\\O2")
             #self.data = VaspData("D:\\OneDrive - Uniwersytet Jagielloński\\modelowanie DFT\\co3o4_new_new\\2.ROS\\1.large_slab\\1.old_random_mag\\6.CoO-O_CoO-O\\antiferro\\HSE\\DOS_new")
         self.data = VaspData(file)
